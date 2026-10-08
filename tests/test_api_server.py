@@ -179,6 +179,12 @@ class TestServerHandler(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("HeatShield AI", body)
 
+    def test_geocode_endpoint(self):
+        status, data, _ = simulate_request("GET", "/api/geocode?q=hyderabad")
+        self.assertEqual(status, 200)
+        self.assertGreater(data["count"], 0)
+        self.assertIn("Hyderabad", data["results"][0]["name"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -28,13 +28,20 @@
       </div>
 
       <div class="header-controls">
-        <!-- Location Selector -->
+        <!-- Global Worldwide City Search Bar -->
+        <div class="global-search-wrapper">
+          <span class="search-icon-prefix">🔍</span>
+          <input type="text" id="global-city-search" class="search-input-field" placeholder="Search any city worldwide..." autocomplete="off">
+          <div id="search-dropdown-results" class="search-dropdown-results"></div>
+        </div>
+
+        <!-- Location Preset Selector -->
         <div class="location-picker-group">
           <span>📍</span>
           <select id="location-select" title="Select location or city">
-            <option value="visakhapatnam" selected>Visakhapatnam, India (Coastal Heat)</option>
-            <option value="delhi">New Delhi, India (Arid Heatwave)</option>
-            <option value="phoenix">Phoenix, USA (Desert Heat)</option>
+            <option value="visakhapatnam" selected>Visakhapatnam, India</option>
+            <option value="delhi">New Delhi, India</option>
+            <option value="phoenix">Phoenix, USA</option>
             <option value="mild">Temperate Zone (Mild 24°C)</option>
             <option value="gps">Use My GPS Location</option>
           </select>
@@ -49,6 +56,12 @@
           <option value="scenario_elderly_vulnerable">4: Elderly Resident (No AC/High Risk)</option>
           <option value="scenario_extreme_no_cooling">5: Extreme Heat + Grid Outage / Zero AC</option>
         </select>
+
+        <!-- Emergency SOS Button -->
+        <button id="btn-open-sos" class="btn-sos-emergency" title="Emergency Heat Illness Triage & Contacts">
+          <span>🚨</span>
+          <span>HEAT SOS</span>
+        </button>
 
         <!-- Language Switcher -->
         <div class="lang-btn-group">
@@ -205,6 +218,29 @@
                 <div class="metric-pill-val" id="metric-swbgt">32.8°C</div>
               </div>
             </div>
+            <!-- Advanced Physiological Heat Strain (ISO 7933) -->
+            <div class="physio-metrics-grid">
+              <div class="physio-card">
+                <div class="physio-card-title">Sweat Loss Rate</div>
+                <div class="physio-card-val" id="physio-sweat-val">1.25 L/h</div>
+                <div class="physio-card-sub">Hydration loss rate</div>
+              </div>
+              <div class="physio-card">
+                <div class="physio-card-title">2% Dehydration Onset</div>
+                <div class="physio-card-val" id="physio-dehydration-val">1.1 hrs</div>
+                <div class="physio-card-sub">Without fluid intake</div>
+              </div>
+              <div class="physio-card">
+                <div class="physio-card-title">Core Temp Rise</div>
+                <div class="physio-card-val" id="physio-core-val">+0.40°C/h</div>
+                <div class="physio-card-sub">Internal thermal load</div>
+              </div>
+              <div class="physio-card">
+                <div class="physio-card-title">UTCI Thermal Stress</div>
+                <div class="physio-card-val" id="physio-utci-val" style="font-size:0.9rem; color:#f87171;">Very Strong</div>
+                <div class="physio-card-sub">Universal Climate Index</div>
+              </div>
+            </div>
           </div>
 
           <!-- Hourly Heat-Risk Timeline -->
@@ -267,6 +303,9 @@
               </button>
               <button class="btn-action-secondary" id="btn-goto-cooling">
                 <span>🌳</span> Find Nearest Cooling
+              </button>
+              <button class="btn-action-secondary" id="btn-export-safety-pass">
+                <span>📄</span> Export Safety Pass
               </button>
             </div>
           </div>
@@ -636,8 +675,21 @@
         <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-bottom: 0.75rem;">
           🚨 AI Priority Emergency Actions (Municipal Dispatch Matrix)
         </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;" id="civic-actions-grid">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem;" id="civic-actions-grid">
           <!-- Dynamically populated action cards -->
+        </div>
+
+        <!-- Live Municipal Dispatch & Action Log -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: #38bdf8;">📡 LIVE CIVIC EMERGENCY DISPATCH LOG</span>
+            <span style="font-size: 0.75rem; color: #10b981;">● Active Civic Dispatch Stream</span>
+          </div>
+          <div class="dispatch-log-box" id="civic-dispatch-log">
+            [SYS] City Heat Command Center active. Heat Vulnerability Index (HVI) monitoring 4 key wards.<br>
+            [MONITOR] Ward 14 flagged at 93/100 thermal load. Surface temperature 44.2°C.<br>
+            [READY] Click "Dispatch Action" above to authorize immediate emergency deployment.
+          </div>
         </div>
 
         <!-- Micro-Zones Heat Vulnerability Index (HVI) Table -->
@@ -925,6 +977,144 @@
 
       <button class="btn-action-primary" id="btn-trigger-demo-alert" style="width: 100%; margin-top: 0.5rem;">
         🔔 Trigger Sample Demo Alert Now
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: EMERGENCY SOS HEAT ILLNESS TRIAGE -->
+  <!-- ========================================== -->
+  <div class="modal-overlay" id="sos-modal">
+    <div class="modal-card" style="border: 2px solid #ef4444; max-width: 620px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #7f1d1d; padding-bottom: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.5rem;">🚨</span>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: #f87171;">HEAT ILLNESS EMERGENCY TRIAGE</h3>
+        </div>
+        <button id="close-sos-modal-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <!-- Critical Alert Box -->
+      <div style="background: rgba(220, 38, 38, 0.18); border: 1px solid #ef4444; border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem;">
+        <div style="font-weight: 800; color: #fca5a5; font-size: 0.95rem; margin-bottom: 0.25rem;">
+          ⚠️ LIFE-THREATENING HEAT STROKE WARNING
+        </div>
+        <div style="font-size: 0.85rem; color: #fee2e2; line-height: 1.45;">
+          If the victim displays <strong>confusion, slurred speech, seizure, fainting, vomiting, or hot dry skin</strong>: Call an ambulance immediately. Every minute of internal body temperature above 40°C increases neurological risk.
+        </div>
+      </div>
+
+      <!-- Direct Hotline Buttons -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem;">
+        <a href="tel:108" class="btn-action-primary" style="background: #dc2626; text-decoration: none; text-align: center;">
+          📞 Call 108 (Ambulance)
+        </a>
+        <a href="tel:112" class="btn-action-primary" style="background: #2563eb; text-decoration: none; text-align: center;">
+          📞 Call 112 (National)
+        </a>
+        <a href="tel:911" class="btn-action-primary" style="background: #b91c1c; text-decoration: none; text-align: center;">
+          📞 Call 911 (Emergency)
+        </a>
+      </div>
+
+      <!-- Step-by-Step Critical First Aid Cooling -->
+      <h4 style="font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;">
+        ❄️ IMMEDIATE COOLING PROTOCOL (While Ambulance Is En Route)
+      </h4>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 1.25rem;">
+        <div style="background: #1e293b; padding: 0.6rem 0.85rem; border-radius: 6px; border-left: 3px solid #38bdf8;">
+          <strong>1. Move immediately:</strong> Relocate to an air-conditioned room or deepest available shade.
+        </div>
+        <div style="background: #1e293b; padding: 0.6rem 0.85rem; border-radius: 6px; border-left: 3px solid #38bdf8;">
+          <strong>2. Strip outer layers:</strong> Remove heavy, restrictive garments, boots, and safety gear.
+        </div>
+        <div style="background: #1e293b; padding: 0.6rem 0.85rem; border-radius: 6px; border-left: 3px solid #38bdf8;">
+          <strong>3. Arterial rapid cooling:</strong> Place ice packs or cold wet cloths on the <em>neck, armpits, and groin</em>. Spray skin with cool water while fanning.
+        </div>
+        <div style="background: #1e293b; padding: 0.6rem 0.85rem; border-radius: 6px; border-left: 3px solid #ef4444;">
+          <strong>4. Fluids restriction:</strong> Do NOT administer oral water or fluids if the person is disoriented, drowsy, or vomiting.
+        </div>
+      </div>
+
+      <!-- Symptom Severity Guide Table -->
+      <h4 style="font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;">
+        📋 Heat Illness Triage Comparison
+      </h4>
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; color: #94a3b8;">
+        <thead>
+          <tr style="border-bottom: 1px solid #334155; color: #fff;">
+            <th style="padding: 4px;">Illness</th>
+            <th style="padding: 4px;">Hallmark Signs</th>
+            <th style="padding: 4px;">Severity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #1e293b;">
+            <td style="padding: 4px; font-weight: 700; color: #f59e0b;">Heat Cramps</td>
+            <td style="padding: 4px;">Painful muscle spasms in calves/abdomen, heavy sweating</td>
+            <td style="padding: 4px; color: #f59e0b;">Mild - Rest & electrolyte hydration</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #1e293b;">
+            <td style="padding: 4px; font-weight: 700; color: #f97316;">Heat Exhaustion</td>
+            <td style="padding: 4px;">Dizziness, headache, nausea, rapid pulse, pale clammy skin</td>
+            <td style="padding: 4px; color: #f97316;">Serious - Active cooling, monitor</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px; font-weight: 700; color: #ef4444;">Heat Stroke</td>
+            <td style="padding: 4px;">Confusion, loss of consciousness, seizures, no sweating</td>
+            <td style="padding: 4px; color: #ef4444; font-weight: 800;">CRITICAL EMERGENCY - CALL 108/911</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: PRINTABLE DAILY HEAT SAFETY PASS -->
+  <!-- ========================================== -->
+  <div class="modal-overlay" id="safety-pass-modal">
+    <div class="modal-card" style="max-width: 640px; background: #fff; color: #0f172a;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 0.75rem; margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.6rem;">🛡️</span>
+          <div>
+            <div style="font-size: 1.15rem; font-weight: 900; letter-spacing: -0.02em;">HEATSHIELD AI SAFETY PERMIT</div>
+            <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Personal Climate Resilience Pass</div>
+          </div>
+        </div>
+        <button id="close-safety-pass-btn" style="background: none; border: none; color: #000; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.85rem; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem;">
+        <div><strong>Worker Profile:</strong> <span id="pass-worker-title">Construction Worker</span></div>
+        <div><strong>Location:</strong> <span id="pass-location-name">Visakhapatnam</span></div>
+        <div><strong>Ambient Heat Index:</strong> <span id="pass-heat-index" style="color: #dc2626; font-weight: 800;">49.2°C (Feels Like)</span></div>
+        <div><strong>Personal Risk:</strong> <span id="pass-risk-score" style="color: #dc2626; font-weight: 800;">91 / 100 (EXTREME)</span></div>
+      </div>
+
+      <div style="background: #fef2f2; border: 1px solid #f87171; border-radius: 6px; padding: 0.75rem; margin-bottom: 1rem;">
+        <div style="font-size: 0.75rem; font-weight: 800; color: #991b1b; text-transform: uppercase;">⏰ MANDATORY WORK MORATORIUM WINDOW</div>
+        <div style="font-size: 1.25rem; font-weight: 900; color: #7f1d1d;" id="pass-danger-window">12:30 PM – 4:30 PM</div>
+        <div style="font-size: 0.8rem; color: #b91c1c;">Halt non-essential heavy manual labor; enforce 30 min work / 30 min shaded rest cycle.</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem;">
+        <div style="background: #f0fdf4; border: 1px solid #86efac; padding: 0.6rem; border-radius: 6px;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: #166534;">💧 HYDRATION QUOTA</div>
+          <div style="font-size: 1.1rem; font-weight: 800; color: #15803d;" id="pass-hydration-quota">6.5 L / Shift</div>
+        </div>
+        <div style="background: #eff6ff; border: 1px solid #93c5fd; padding: 0.6rem; border-radius: 6px;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: #1e40af;">🌳 NEAREST COOLING REFUGE</div>
+          <div style="font-size: 0.85rem; font-weight: 700; color: #1d4ed8;" id="pass-cooling-refuge">Municipal AC Hall (700m)</div>
+        </div>
+      </div>
+
+      <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 1.25rem; line-height: 1.4;">
+        * Generated by HeatShield AI based on NIOSH/OSHA thermal guidelines and local meteorological telemetry. Informational occupational safety permit.
+      </div>
+
+      <button id="btn-print-safety-pass" class="btn-action-primary" style="width: 100%; background: #0f172a;">
+        🖨️ Print Safety Pass / Save PDF
       </button>
     </div>
   </div>

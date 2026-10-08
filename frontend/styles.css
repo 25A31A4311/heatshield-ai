@@ -1054,3 +1054,188 @@ body {
   font-size: 0.8rem;
   color: var(--text-dim);
 }
+
+/* ==========================================
+   ADVANCED EXPANSIONS: SEARCH, SOS, PHYSIO & EXPORT
+   ========================================== */
+
+/* Global Search Autocomplete */
+.global-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-field {
+  background: #1e293b;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: #fff;
+  padding: 0.45rem 0.85rem 0.45rem 2.2rem;
+  font-size: 0.85rem;
+  width: 210px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.search-input-field:focus {
+  width: 270px;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.35);
+}
+
+.search-icon-prefix {
+  position: absolute;
+  left: 0.65rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-dropdown-results {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 6px;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  z-index: 1500;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.search-dropdown-results.active {
+  display: block;
+}
+
+.search-result-item {
+  padding: 0.6rem 0.85rem;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  cursor: pointer;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-result-item:hover {
+  background: #1e293b;
+  color: #fff;
+}
+
+/* Emergency SOS Pulsing Button */
+.btn-sos-emergency {
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+  color: #fff;
+  border: 1px solid #f87171;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.5);
+  animation: pulse-emergency 2.5s infinite;
+}
+
+@keyframes pulse-emergency {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6); }
+  70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+/* Physiological Heat Strain Metrics Card */
+.physio-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.physio-card {
+  background: #161e2e;
+  border: 1px solid #283548;
+  border-radius: 8px;
+  padding: 0.65rem;
+  text-align: center;
+}
+
+.physio-card-title {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.physio-card-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #38bdf8;
+  margin: 2px 0;
+}
+
+.physio-card-sub {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+/* Civic Live Dispatch Matrix */
+.btn-dispatch-action {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-dispatch-action:hover {
+  background: #1d4ed8;
+}
+
+.btn-dispatch-action.dispatched {
+  background: #10b981;
+  pointer-events: none;
+}
+
+.dispatch-log-box {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 0.75rem;
+  max-height: 150px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+/* Printable Heat Safety Pass */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .header-container, .heat-alert-banner, .nav-tabs-bar, .quick-action-bar, .modal-overlay, footer {
+    display: none !important;
+  }
+  .printable-pass-container {
+    display: block !important;
+    border: 2px solid #000;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 800px;
+    color: #000;
+  }
+}

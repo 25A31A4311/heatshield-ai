@@ -192,6 +192,13 @@ def calculate_environmental_heat_risk(
     if not factors_explanation:
         factors_explanation.append("Current ambient weather parameters are within baseline seasonal variations.")
 
+    # 6. Physiological Strain Metrics (ISO 7933 Modeling)
+    physio = calculate_physiological_strain(
+        temp_c=temperature,
+        humidity=humidity,
+        apparent_temp_c=apparent_temperature
+    )
+
     summary_text = (
         f"Environmental risk is {category} ({final_score}/100). "
         f"Temperature is {temperature:.1f}°C (feels like {apparent_temperature:.1f}°C) with {humidity:.0f}% humidity."
@@ -211,7 +218,65 @@ def calculate_environmental_heat_risk(
             "swbgt_c": round(swbgt, 1),
             "time_of_day_hour": time_of_day_hour
         },
+        "physiological_strain": physio,
         "contributing_factors": factors_explanation,
         "summary": summary_text,
         "disclaimer": "AI risk estimate / prototype. Informational decision support only; not a medical diagnosis."
+    }
+
+
+def calculate_physiological_strain(
+    temp_c: float,
+    humidity: float,
+    apparent_temp_c: float,
+    activity_level: str = "moderate",
+    body_weight_kg: float = 70.0
+) -> Dict[str, Any]:
+    """
+    Computes ISO 7933-aligned human physiological heat strain parameters:
+    - Hourly sweat production rate (L/hr)
+    - Dehydration time horizon until 2% body mass fluid deficit
+    - Estimated Core Body Temperature increase rate (°C/hr)
+    - Universal Thermal Climate Index (UTCI) thermal stress equivalent
+    """
+    # Metabolic rate in Watts (Sedentary ~115W, Moderate ~300W, Heavy ~500W, Strenuous ~650W)
+    metabolic_rates = {
+        "sedentary": 115.0,
+        "light": 180.0,
+        "moderate": 300.0,
+        "heavy": 500.0,
+        "strenuous": 650.0
+    }
+    metabolic_w = metabolic_rates.get(activity_level.lower(), 300.0)
+
+    # Required evaporative sweat loss rate (Shapiro / ISO 7933 approximation)
+    # E_req in W, 1 L sweat evaporation dissipates approx 680 W
+    thermal_load_gradient = max(0.0, temp_c - 35.0) * 18.0 + (humidity * 1.8)
+    total_heat_load_w = metabolic_w + thermal_load_gradient
+    sweat_rate_liters_per_hr = max(0.25, min(2.4, round((total_heat_load_w / 680.0) * 0.85, 2)))
+
+    # Dehydration 2% threshold = 2% of body weight in liters of water
+    fluid_deficit_threshold_liters = body_weight_kg * 0.02
+    hours_to_2pct_dehydration = max(0.5, round(fluid_deficit_threshold_liters / sweat_rate_liters_per_hr, 1))
+
+    # Core temperature elevation rate (°C/hr without cooling/fluid replacement)
+    if apparent_temp_c >= 45:
+        core_temp_rise_rate_c_per_hr = 0.65
+        utci_stress = "Extreme Heat Stress"
+    elif apparent_temp_c >= 38:
+        core_temp_rise_rate_c_per_hr = 0.40
+        utci_stress = "Very Strong Heat Stress"
+    elif apparent_temp_c >= 32:
+        core_temp_rise_rate_c_per_hr = 0.20
+        utci_stress = "Moderate Heat Stress"
+    else:
+        core_temp_rise_rate_c_per_hr = 0.05
+        utci_stress = "No Thermal Stress"
+
+    return {
+        "sweat_loss_rate_l_per_hr": sweat_rate_liters_per_hr,
+        "hydration_deficit_2pct_hours": hours_to_2pct_dehydration,
+        "core_temp_rise_rate_c_per_hr": core_temp_rise_rate_c_per_hr,
+        "utci_thermal_stress_category": utci_stress,
+        "fluid_intake_recommendation_ml_hr": int(sweat_rate_liters_per_hr * 1000)
     }

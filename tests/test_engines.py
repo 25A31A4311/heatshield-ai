@@ -12,7 +12,7 @@ import os
 backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend"))
 sys.path.insert(0, backend_dir)
 
-from heat_risk_engine import calculate_environmental_heat_risk, get_risk_category, calculate_heat_index, calculate_swbgt
+from heat_risk_engine import calculate_environmental_heat_risk, get_risk_category, calculate_heat_index, calculate_swbgt, calculate_physiological_strain
 from vulnerability_engine import evaluate_personal_vulnerability
 from danger_window_engine import analyze_danger_window
 from routing_engine import calculate_routes
@@ -220,6 +220,16 @@ class TestHeatShieldEngines(unittest.TestCase):
         thi = calculate_livestock_thi("Dairy Cattle", temp_c=39.0, humidity=70.0)
         self.assertGreater(thi["thi_score"], 80)
         self.assertIn("STRESS", thi["status"])
+
+    def test_physiological_strain_model(self):
+        """Test ISO 7933-aligned sweat loss rate and core temp rise."""
+        physio = calculate_physiological_strain(
+            temp_c=40.0, humidity=65.0, apparent_temp_c=49.0, activity_level="strenuous"
+        )
+        self.assertGreater(physio["sweat_loss_rate_l_per_hr"], 0.8)
+        self.assertLessEqual(physio["hydration_deficit_2pct_hours"], 2.5)
+        self.assertGreater(physio["core_temp_rise_rate_c_per_hr"], 0.3)
+        self.assertIn("Heat Stress", physio["utci_thermal_stress_category"])
 
 
 if __name__ == "__main__":

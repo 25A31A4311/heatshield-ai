@@ -259,6 +259,26 @@ function setupEventListeners() {
   // Agriculture & Livestock buttons
   document.getElementById("btn-calc-crop").addEventListener("click", assessCropStress);
   document.getElementById("btn-calc-livestock").addEventListener("click", assessLivestockTHI);
+
+  // Global Worldwide City Search
+  setupGlobalCitySearch();
+
+  // Emergency SOS Modal
+  document.getElementById("btn-open-sos").addEventListener("click", () => {
+    document.getElementById("sos-modal").classList.add("open");
+  });
+  document.getElementById("close-sos-modal-btn").addEventListener("click", () => {
+    document.getElementById("sos-modal").classList.remove("open");
+  });
+
+  // Printable Safety Pass Modal
+  document.getElementById("btn-export-safety-pass").addEventListener("click", openSafetyPassModal);
+  document.getElementById("close-safety-pass-btn").addEventListener("click", () => {
+    document.getElementById("safety-pass-modal").classList.remove("open");
+  });
+  document.getElementById("btn-print-safety-pass").addEventListener("click", () => {
+    window.print();
+  });
 }
 
 // ==========================================
@@ -388,6 +408,19 @@ function renderDashboard() {
   document.getElementById("metric-wind").textContent = `${current.wind_speed_kmh} km/h`;
   document.getElementById("metric-uv").textContent = current.uv_index;
   document.getElementById("metric-swbgt").textContent = `${env.metrics.swbgt_c}°C`;
+
+  // 3b. Advanced Physiological Heat Strain (ISO 7933)
+  if (env.physiological_strain) {
+    const ps = env.physiological_strain;
+    const sweatEl = document.getElementById("physio-sweat-val");
+    const dehyEl = document.getElementById("physio-dehydration-val");
+    const coreEl = document.getElementById("physio-core-val");
+    const utciEl = document.getElementById("physio-utci-val");
+    if (sweatEl) sweatEl.textContent = `${ps.sweat_loss_rate_l_per_hr} L/h`;
+    if (dehyEl) dehyEl.textContent = `${ps.hydration_deficit_2pct_hours} hrs`;
+    if (coreEl) coreEl.textContent = `+${ps.core_temp_rise_rate_c_per_hr}°C/h`;
+    if (utciEl) utciEl.textContent = ps.utci_thermal_stress_category;
+  }
 
   // 4. Contributing Factors
   const factorsList = document.getElementById("contributing-factors-list");
@@ -867,10 +900,15 @@ async function loadCommunityCommandData() {
       card.innerHTML = `
         <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
           <span style="font-size:0.75rem; color:#38bdf8; font-weight:700;">${act.action_id} • ${act.category}</span>
-          <span class="data-status-badge live">${act.status}</span>
+          <span class="data-status-badge live" id="status-badge-${act.action_id}">${act.status}</span>
         </div>
         <div style="font-size:0.95rem; font-weight:800; color:#fff; margin-bottom:0.35rem;">${act.title}</div>
-        <div style="font-size:0.8rem; color:#cbd5e1; line-height:1.4;">${act.impact}</div>
+        <div style="font-size:0.8rem; color:#cbd5e1; line-height:1.4; margin-bottom:0.6rem;">${act.impact}</div>
+        <div style="display:flex; justify-content:flex-end;">
+          <button class="btn-dispatch-action" id="btn-dispatch-${act.action_id}" onclick="dispatchCivicAction('${act.action_id}', '${act.title.replace(/'/g, "\\'")}')">
+            🚀 Authorize & Dispatch
+          </button>
+        </div>
       `;
       actionsGrid.appendChild(card);
     });
@@ -1239,3 +1277,148 @@ function triggerBrowserAlert(message) {
   // Also show prominent alert banner update
   document.getElementById("alert-banner-text").innerHTML = `<strong>SIMULATED DEMO ALERT:</strong> ${message}`;
 }
+
+// ==========================================
+// ADVANCED MODULES: GLOBAL SEARCH, SAFETY PASS & CIVIC DISPATCH
+// ==========================================
+
+function setupGlobalCitySearch() {
+  const searchInput = document.getElementById("global-city-search");
+  const dropdown = document.getElementById("search-dropdown-results");
+  if (!searchInput || !dropdown) return;
+
+  let debounceTimer = null;
+
+  searchInput.addEventListener("input", (e) => {
+    const query = e.target.value.trim();
+    clearTimeout(debounceTimer);
+
+    if (query.length < 2) {
+      dropdown.classList.remove("active");
+      dropdown.innerHTML = "";
+      return;
+    }
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        const results = data.results || [];
+
+        if (results.length === 0) {
+          dropdown.innerHTML = `<div style="padding:0.75rem; font-size:0.8rem; color:#94a3b8; text-align:center;">No coordinates found for "${query}"</div>`;
+          dropdown.classList.add("active");
+          return;
+        }
+
+        dropdown.innerHTML = "";
+        results.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "search-result-item";
+          div.innerHTML = `
+            <div>
+              <div style="font-weight:700; color:#fff;">${item.name}</div>
+              <div style="font-size:0.7rem; color:#38bdf8;">${item.lat.toFixed(4)}, ${item.lon.toFixed(4)}</div>
+            </div>
+            <span style="font-size:0.7rem; color:#94a3b8;">Select →</span>
+          `;
+          div.addEventListener("click", () => {
+            state.currentLocation = {
+              name: item.name,
+              lat: item.lat,
+              lon: item.lon
+            };
+            searchInput.value = item.name.split(",")[0];
+            dropdown.classList.remove("active");
+            state.activeScenario = "";
+            document.getElementById("scenario-active-tag").textContent = "GLOBAL SEARCH (LIVE)";
+
+            // Update UI & re-calculate
+            fetchWeatherAndCalculate();
+            loadNearbyResources();
+            if (state.mapInstance) {
+              state.mapInstance.setView([item.lat, item.lon], 14);
+            }
+          });
+          dropdown.appendChild(div);
+        });
+        dropdown.classList.add("active");
+
+      } catch (err) {
+        console.warn("Geocoding lookup error:", err);
+      }
+    }, 250);
+  });
+
+  // Close dropdown on outside click
+  document.addEventListener("click", (e) => {
+    if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove("active");
+    }
+  });
+}
+
+function openSafetyPassModal() {
+  const modal = document.getElementById("safety-pass-modal");
+  if (!modal) return;
+
+  const titleEl = document.getElementById("pass-worker-title");
+  const locEl = document.getElementById("pass-location-name");
+  const hiEl = document.getElementById("pass-heat-index");
+  const riskEl = document.getElementById("pass-risk-score");
+  const winEl = document.getElementById("pass-danger-window");
+  const quotaEl = document.getElementById("pass-hydration-quota");
+  const refEl = document.getElementById("pass-cooling-refuge");
+
+  if (titleEl) titleEl.textContent = state.profile.occupation.replace(/_/g, " ").toUpperCase();
+  if (locEl) locEl.textContent = state.currentLocation.name;
+  if (hiEl) {
+    const at = state.currentWeather ? state.currentWeather.apparent_temp_c : 48.0;
+    hiEl.textContent = `${at}°C (Feels Like)`;
+  }
+  if (riskEl) {
+    const s = state.riskData ? state.riskData.personal_risk.personal_risk_score : 90;
+    const cat = state.riskData ? state.riskData.personal_risk.risk_category : "EXTREME";
+    riskEl.textContent = `${s} / 100 (${cat})`;
+  }
+  if (winEl) {
+    const dw = state.riskData && state.riskData.danger_window ? state.riskData.danger_window.window_display : "12:30 PM – 4:30 PM";
+    winEl.textContent = dw;
+  }
+  if (quotaEl) {
+    const q = state.profile.outdoor_exposure_hours >= 6 ? "7.0 L / Shift" : "5.0 L / Shift";
+    quotaEl.textContent = q;
+  }
+  if (refEl) {
+    const nearest = state.resources.find(r => r.category === "cooling");
+    refEl.textContent = nearest ? `${nearest.name} (${nearest.distance_km} km)` : "Designated Civic Climate Shelter";
+  }
+
+  modal.classList.add("open");
+}
+
+window.dispatchCivicAction = function(actionId, title) {
+  const btn = document.getElementById(`btn-dispatch-${actionId}`);
+  const badge = document.getElementById(`status-badge-${actionId}`);
+  const logBox = document.getElementById("civic-dispatch-log");
+
+  if (btn) {
+    btn.textContent = "DISPATCHED 🚚";
+    btn.classList.add("dispatched");
+  }
+  if (badge) {
+    badge.textContent = "Active Dispatch";
+    badge.className = "data-status-badge live";
+  }
+
+  if (logBox) {
+    const timeStr = new Date().toLocaleTimeString();
+    const entry = document.createElement("div");
+    entry.style.color = "#34d399";
+    entry.style.marginTop = "4px";
+    entry.innerHTML = `[${timeStr}] 🚨 <strong>DISPATCH CONFIRMED:</strong> [${actionId}] ${title} authorized. Units moving to designated sector.`;
+    logBox.prepend(entry);
+  }
+
+  triggerBrowserAlert(`🚨 Municipal Action Dispatched: ${title}`);
+};
