@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HeatShield AI - Hyperlocal Extreme Heat Platform</title>
+  <meta name="description" content="AI-powered hyperlocal extreme-heat risk, personal vulnerability, and action platform. Predict. Protect. Prevent.">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Leaflet CSS for interactive map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Chart.js for Climate Trends -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header-container">
+    <div class="header-top">
+      <div class="brand-wrapper" id="brand-home-btn">
+        <div class="brand-logo-icon">🛡️</div>
+        <div class="brand-titles">
+          <h1>
+            HEATSHIELD AI
+            <span class="brand-badge">CLIMATE INTEL</span>
+          </h1>
+          <div class="brand-tagline">Predict. Protect. Prevent.</div>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <!-- Location Selector -->
+        <div class="location-picker-group">
+          <span>📍</span>
+          <select id="location-select" title="Select location or city">
+            <option value="visakhapatnam" selected>Visakhapatnam, India (Coastal Heat)</option>
+            <option value="delhi">New Delhi, India (Arid Heatwave)</option>
+            <option value="phoenix">Phoenix, USA (Desert Heat)</option>
+            <option value="mild">Temperate Zone (Mild 24°C)</option>
+            <option value="gps">Use My GPS Location</option>
+          </select>
+        </div>
+
+        <!-- Demo Scenarios Dropdown -->
+        <select id="demo-scenario-select" class="scenario-select" title="Switch between Judge Demo Scenarios">
+          <option value="">⚡ DEMO SCENARIOS (Judge Test)</option>
+          <option value="scenario_normal">1: Normal Mild Day (24°C)</option>
+          <option value="scenario_extreme_heatwave">2: Coastal Extreme Heatwave (49°C Feel)</option>
+          <option value="scenario_outdoor_worker">3: Outdoor Worker (8hr Sun/Strenuous)</option>
+          <option value="scenario_elderly_vulnerable">4: Elderly Resident (No AC/High Risk)</option>
+          <option value="scenario_extreme_no_cooling">5: Extreme Heat + Grid Outage / Zero AC</option>
+        </select>
+
+        <!-- Language Switcher -->
+        <div class="lang-btn-group">
+          <button class="lang-btn active" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="te">తెలుగు</button>
+          <button class="lang-btn" data-lang="hi">हिन्दी</button>
+        </div>
+
+        <!-- Personal Profile Modal Toggle -->
+        <button id="open-profile-btn" class="btn-profile-toggle">
+          <span>👤</span>
+          <span id="profile-btn-label">Profile: General</span>
+        </button>
+
+        <!-- Simulated Alert Notification Button -->
+        <button id="alert-trigger-btn" class="btn-action-secondary" style="padding: 0.45rem 0.75rem; font-size: 0.8rem;">
+          <span>🔔</span>
+          <span id="alerts-status-text">Alerts (Active)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="nav-tabs-bar">
+      <button class="nav-tab-btn active" data-tab="tab-dashboard">
+        <span>📊</span> <span data-i18n="tab_dashboard">Dashboard</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-map">
+        <span>🗺️</span> <span data-i18n="tab_map">Heat Map & POIs</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-route">
+        <span>🚶</span> <span data-i18n="tab_route">Heat-Safe Route</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-assistant">
+        <span>💬</span> <span data-i18n="tab_assistant">AI Heat Assistant</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-worker">
+        <span>👷</span> <span data-i18n="tab_worker">Outdoor Worker Mode</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-community">
+        <span>🏛️</span> <span data-i18n="tab_community">City Command Center</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-climate">
+        <span>📈</span> <span data-i18n="tab_climate">Climate Trends & Grid</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-agri">
+        <span>🌾</span> <span data-i18n="tab_agri">Farm & Livestock</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- ACTIVE ALERT BANNER -->
+  <aside class="heat-alert-banner" id="heat-alert-banner" aria-label="Heat Advisory">
+    <div style="display: flex; align-items: center;">
+      <span class="alert-pill">ALERT</span>
+      <span id="alert-banner-text"><strong>HEAT RISK ADVISORY:</strong> Peak thermal stress expected between 12:30 PM and 4:30 PM. Stay hydrated and seek shade.</span>
+    </div>
+    <span class="data-status-badge demo" id="scenario-active-tag">LIVE / CALIBRATED BASELINE</span>
+  </aside>
+
+  <!-- MAIN CONTAINER -->
+  <main class="app-container">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: DASHBOARD (MAIN HERO & DECISION HUB) -->
+    <!-- ========================================== -->
+    <section id="tab-dashboard" class="tab-content-panel active">
+      <div class="dashboard-grid">
+        
+        <!-- Left Column: Master Heat Risk & Danger Window -->
+        <div>
+          <!-- Hero Risk Box -->
+          <div class="card hero-risk-box" id="hero-risk-card">
+            <div class="hero-header-row">
+              <div>
+                <div class="location-context-tag">
+                  <span>📍</span>
+                  <strong id="hero-location-text">Visakhapatnam, Andhra Pradesh</strong>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 3px;" id="hero-updated-time">
+                  Data Stream: Synced 2 mins ago
+                </div>
+              </div>
+              <span class="data-status-badge live" id="weather-source-badge">Live Open-Meteo API</span>
+            </div>
+
+            <!-- Risk Score Display -->
+            <div class="risk-score-display">
+              <div class="score-circle-wrapper">
+                <svg class="score-circle-svg" viewBox="0 0 140 140">
+                  <circle class="score-circle-bg" cx="70" cy="70" r="60"></circle>
+                  <circle id="score-progress-ring" class="score-circle-fill" cx="70" cy="70" r="60"></circle>
+                </svg>
+                <div class="score-number-text">
+                  <div class="score-number" id="hero-score-val">91</div>
+                  <div class="score-out-of">/ 100</div>
+                </div>
+              </div>
+
+              <div class="risk-level-details">
+                <div class="risk-severity-pill" id="hero-severity-pill">
+                  <span id="hero-severity-emoji">🚨</span>
+                  <span id="hero-severity-label">EXTREME HEAT RISK</span>
+                </div>
+                
+                <div class="personal-vs-env-row">
+                  <span>Personal Risk: <strong id="val-personal-score">91/100</strong></span>
+                  <span>•</span>
+                  <span>Environmental: <strong id="val-env-score">85/100</strong></span>
+                </div>
+
+                <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.45;" id="hero-risk-summary">
+                  Extreme thermal stress detected. Ambient temperature is high, humidity is elevated, and solar irradiance is intense.
+                </div>
+              </div>
+            </div>
+
+            <!-- Peak Danger Window Banner -->
+            <div class="peak-danger-box">
+              <div>
+                <div class="danger-window-label">⏰ PEAK DANGER TIME WINDOW</div>
+                <div class="danger-window-time" id="hero-danger-window-text">12:30 PM – 4:30 PM</div>
+              </div>
+              <div class="danger-window-peak-metric">
+                <div>Peak Load: <strong id="hero-peak-hour-text">2:00 PM</strong></div>
+                <div>Peak Temp: <strong id="hero-peak-temp-text">39.8°C</strong></div>
+              </div>
+            </div>
+
+            <!-- Weather Metrics Strip -->
+            <div class="weather-metrics-strip">
+              <div class="metric-pill-item">
+                <div class="metric-pill-title">Temperature</div>
+                <div class="metric-pill-val" id="metric-temp">38.6°C</div>
+              </div>
+              <div class="metric-pill-item">
+                <div class="metric-pill-title">Feels Like</div>
+                <div class="metric-pill-val" id="metric-apparent">49.2°C</div>
+              </div>
+              <div class="metric-pill-item">
+                <div class="metric-pill-title">Humidity</div>
+                <div class="metric-pill-val" id="metric-humidity">68%</div>
+              </div>
+              <div class="metric-pill-item">
+                <div class="metric-pill-title">Wind Speed</div>
+                <div class="metric-pill-val" id="metric-wind">14 km/h</div>
+              </div>
+              <div class="metric-pill-item">
+                <div class="metric-pill-title">UV Index</div>
+                <div class="metric-pill-val" id="metric-uv">10.4</div>
+              </div>
+              <div class="metric-pill-item">
+                <div class="metric-pill-title">sWBGT</div>
+                <div class="metric-pill-val" id="metric-swbgt">32.8°C</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hourly Heat-Risk Timeline -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <span>⏱️</span> Hourly Heat Danger Timeline
+              </div>
+              <div class="timeline-days-selector">
+                <button class="timeline-day-btn active" data-day="today">Today</button>
+                <button class="timeline-day-btn" data-day="tomorrow">Tomorrow</button>
+                <button class="timeline-day-btn" data-day="day3">Day 3</button>
+              </div>
+            </div>
+            
+            <div class="hourly-timeline-scroll" id="hourly-timeline-container">
+              <!-- Dynamically populated hourly timeline cards -->
+            </div>
+          </div>
+
+          <!-- Explainability: Why is Risk Score High? -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <span>🔍</span> Why Is The Risk High? (Contributing Factors)
+              </div>
+              <span style="font-size: 0.75rem; color: var(--text-dim);">Multi-Factor Deterministic Engine</span>
+            </div>
+            <ul class="factors-list" id="contributing-factors-list">
+              <!-- Populated dynamically -->
+            </ul>
+          </div>
+        </div>
+
+        <!-- Right Column: Personalized Action Guidance & Quick Tools -->
+        <div>
+          <!-- Personalized Recommendations -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <span>🛡️</span> What Should You Do? (Action Plan)
+              </div>
+              <span class="data-status-badge demo" id="rec-profile-tag">General Public</span>
+            </div>
+            
+            <div class="recommendations-container" id="recommendations-list">
+              <!-- Dynamically rendered -->
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="quick-action-bar">
+              <button class="btn-action-primary" id="btn-goto-assistant">
+                <span>💬</span> Ask HeatShield AI
+              </button>
+              <button class="btn-action-secondary" id="btn-goto-map">
+                <span>🗺️</span> View Heat Map
+              </button>
+              <button class="btn-action-secondary" id="btn-goto-route">
+                <span>🚶</span> Plan Safe Route
+              </button>
+              <button class="btn-action-secondary" id="btn-goto-cooling">
+                <span>🌳</span> Find Nearest Cooling
+              </button>
+            </div>
+          </div>
+
+          <!-- Nearby Resources Quick Glance -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <span>📍</span> Nearest Emergency & Hydration Resources
+              </div>
+              <span style="font-size: 0.75rem; color: #38bdf8; cursor: pointer;" id="view-all-resources-link">View Map →</span>
+            </div>
+            <div class="resource-scroll-list" id="dashboard-quick-resources" style="max-height: 280px;">
+              <!-- Dynamically populated top 3 POIs -->
+            </div>
+          </div>
+
+          <!-- Grid Energy Stress Widget -->
+          <div class="card" style="border-left: 4px solid #f97316;">
+            <div class="card-header">
+              <div class="card-title">
+                <span>⚡</span> Energy Grid Cooling Strain
+              </div>
+              <span class="data-status-badge demo" id="grid-status-badge">HIGH STRAIN</span>
+            </div>
+            <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.45;" id="grid-stress-desc">
+              Peak residential and commercial air-conditioning compressor load expected between <strong>2:00 PM – 6:00 PM</strong>.
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem;">
+              Tip: Pre-cool living spaces in the morning and adjust thermostat to 25°C during peak hours.
+            </div>
+          </div>
+
+          <!-- Privacy & Medical Disclaimer -->
+          <div class="medical-disclaimer-box">
+            <strong>Medical & Safety Disclaimer:</strong><br>
+            HeatShield AI provides informational risk estimates and climate safety guidance. It is not a medical diagnostic system or a substitute for professional medical advice. If you experience severe symptoms, contact emergency services (108 / 112 / 911).
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: HYPERLOCAL HEAT MAP & RESOURCES -->
+    <!-- ========================================== -->
+    <section id="tab-map" class="tab-content-panel">
+      <div class="card" style="margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <h2 style="font-size: 1.2rem; font-weight: 800; color: #fff;">Hyperlocal Heat & Safety Map</h2>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+              Visualizes micro-urban heat zones, public drinking water stations, cooling shelters, and medical facilities.
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="data-status-badge live">OpenStreetMap Live Engine</span>
+            <span class="data-status-badge demo">POI Directory: Verified / Demo</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="map-layout-container">
+        <!-- Interactive Map Canvas -->
+        <div class="map-wrapper-card">
+          <div class="map-toolbar">
+            <div class="map-filter-chips">
+              <button class="map-filter-chip active" data-filter="all">All Points</button>
+              <button class="map-filter-chip" data-filter="water">🚰 Water Refill</button>
+              <button class="map-filter-chip" data-filter="cooling">🌳 Cooling Shelters</button>
+              <button class="map-filter-chip" data-filter="medical">🏥 Medical / Clinics</button>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-dim);" id="map-counter-text">
+              Showing 8 active resources
+            </div>
+          </div>
+
+          <div id="map-view-canvas">
+            <!-- Leaflet Map attaches here -->
+          </div>
+        </div>
+
+        <!-- Resources Sidebar -->
+        <div class="map-resources-sidebar">
+          <div style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">
+            Nearby Safe Refuges
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.5rem;">
+            Click any resource to zoom and view route.
+          </div>
+          <div class="resource-scroll-list" id="map-sidebar-resource-list">
+            <!-- Dynamically populated POI cards -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: HEAT-SAFE ROUTE PLANNER -->
+    <!-- ========================================== -->
+    <section id="tab-route" class="tab-content-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🚶</span> Heat-Safer Route Planner
+          </div>
+          <span class="data-status-badge live">Thermal Exposure Optimizer</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Standard navigation routes prioritize minimal seconds across unshaded asphalt. HeatShield AI calculates routes with higher tree canopy shade, lower radiant heat, and drinking water checkpoints.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label class="form-label" for="route-start-input">Origin / Start Location</label>
+            <input type="text" id="route-start-input" class="form-control" value="RK Beach Front Walkway" placeholder="Enter starting point">
+          </div>
+          <div>
+            <label class="form-label" for="route-dest-input">Destination</label>
+            <input type="text" id="route-dest-input" class="form-control" value="Siripuram Central Commercial Circle" placeholder="Enter destination">
+          </div>
+          <div style="display: flex; align-items: flex-end;">
+            <button class="btn-action-primary" id="btn-calculate-route" style="width: 100%; height: 42px;">
+              <span>🧭</span> Compare Fastest vs Heat-Safer Route
+            </button>
+          </div>
+        </div>
+
+        <!-- Route Comparison Cards -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;" id="route-results-container">
+          <!-- Fastest Route -->
+          <div class="card" style="border: 2px solid #ef4444; background: #161a26;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span style="font-size: 1.05rem; font-weight: 800; color: #f87171;">🏃 Fastest Direct Route</span>
+              <span class="data-status-badge demo" style="border-color: #ef4444; color: #f87171;">Severe Exposure</span>
+            </div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;" id="fastest-time-val">
+              15 mins <span style="font-size: 1rem; color: var(--text-muted);">(2.1 km)</span>
+            </div>
+            <div style="font-size: 0.85rem; color: #fca5a5; margin-bottom: 0.75rem;">
+              ⚠️ 88/100 Heat Exposure (Continuous unshaded asphalt radiation)
+            </div>
+            <ul style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1.2rem; line-height: 1.5;" id="fastest-warnings-list">
+              <li>Open multi-lane roadway with zero tree canopy</li>
+              <li>Surface asphalt temperature reaches +48°C</li>
+              <li>0 drinking water refill points along path</li>
+            </ul>
+          </div>
+
+          <!-- Heat-Safer Route -->
+          <div class="card" style="border: 2px solid #10b981; background: #0f2420;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span style="font-size: 1.05rem; font-weight: 800; color: #34d399;">🌳 Recommended Heat-Safer Route</span>
+              <span class="data-status-badge live">42% Less Heat Load</span>
+            </div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;" id="safer-time-val">
+              19 mins <span style="font-size: 1rem; color: var(--text-muted);">(2.4 km, +4 mins)</span>
+            </div>
+            <div style="font-size: 0.85rem; color: #6ee7b7; margin-bottom: 0.75rem;">
+              ✅ 51/100 Moderated Exposure (Weaves through tree canopies & shaded colonnades)
+            </div>
+            <ul style="font-size: 0.8rem; color: #cbd5e1; padding-left: 1.2rem; line-height: 1.5;" id="safer-benefits-list">
+              <li>68% estimated tree canopy and building shade</li>
+              <li>Includes 2 public drinking water stations</li>
+              <li>Passes near air-conditioned central library respite hall</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 1rem;">
+          * Shade coverage is estimated based on solar azimuth angle and urban canyon geometry. Clearly distinguishing verified civic hydration points from estimated canopy parameters.
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: AI HEAT ASSISTANT -->
+    <!-- ========================================== -->
+    <section id="tab-assistant" class="tab-content-panel">
+      <div class="chat-window-card">
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <div class="assistant-avatar">🤖</div>
+            <div>
+              <div style="font-weight: 800; color: #fff; font-size: 1.05rem;">HeatShield Assistant</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                Grounding: Real-Time Environmental Risk & POI Mesh • Zero Hallucination Guardrails
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <!-- Text-to-speech toggle -->
+            <label style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+              <input type="checkbox" id="tts-audio-toggle">
+              <span>🔊 Voice Readout (TTS)</span>
+            </label>
+            <span class="data-status-badge live" id="ai-provider-badge">Grounded Expert AI</span>
+          </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="chat-messages-container" id="chat-messages-box">
+          <div class="chat-message-bubble assistant">
+            👋 Hello! I am your <strong>HeatShield Assistant</strong>. I combine current environmental data, danger time windows, and your personal profile to answer heat-safety questions.<br><br>
+            You can ask me:
+            <ul style="margin-left: 1.25rem; margin-top: 0.5rem; line-height: 1.5;">
+              <li>"Can I go for a run at 3 PM?"</li>
+              <li>"I'm working outside tomorrow. When should I take breaks?"</li>
+              <li>"What time will be safest to walk?"</li>
+              <li>"Where is the nearest cooling center?"</li>
+              <li>"Why is my heat risk high?"</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Suggestion Chips -->
+        <div class="chat-prompt-chips">
+          <div class="prompt-chip" data-query="Can I go running at 3 PM?">🏃 Running at 3 PM?</div>
+          <div class="prompt-chip" data-query="I'm working outside tomorrow. When should I take breaks?">👷 Worker break schedule?</div>
+          <div class="prompt-chip" data-query="Where is the nearest cooling center and water?">🚰 Nearest cooling & water?</div>
+          <div class="prompt-chip" data-query="Why is my heat risk high?">📊 Why is my risk high?</div>
+          <div class="prompt-chip" data-query="What should I do if I feel dizzy?">⚠️ Feeling dizzy or sick?</div>
+        </div>
+
+        <!-- Input Bar -->
+        <div class="chat-input-bar">
+          <input type="text" id="chat-user-input" class="chat-text-input" placeholder="Ask a heat safety question (e.g. Can I walk outside at 2 PM?)...">
+          <button id="btn-send-chat" class="btn-chat-send">Send</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 5: OUTDOOR WORKER MODE -->
+    <!-- ========================================== -->
+    <section id="tab-worker" class="tab-content-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>👷</span> Outdoor Worker Shift Safety Dashboard
+          </div>
+          <span class="data-status-badge live">OSHA / NIOSH Thermal Guidelines</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Heavy physical labor in extreme heat causes internal metabolic heat buildup. This dashboard computes hourly work-rest cycles and mandatory hydration quotas across your shift.
+        </p>
+
+        <!-- Shift Settings -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; background: var(--bg-card); padding: 1rem; border-radius: 8px;">
+          <div>
+            <label class="form-label" for="worker-location-name">Job Site Location</label>
+            <input type="text" id="worker-location-name" class="form-control" value="Visakhapatnam Port District">
+          </div>
+          <div>
+            <label class="form-label" for="worker-shift-start">Shift Start</label>
+            <select id="worker-shift-start" class="form-control">
+              <option value="6">6:00 AM</option>
+              <option value="7">7:00 AM</option>
+              <option value="8">8:00 AM</option>
+              <option value="9" selected>9:00 AM</option>
+              <option value="10">10:00 AM</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="worker-shift-end">Shift End</label>
+            <select id="worker-shift-end" class="form-control">
+              <option value="15">3:00 PM</option>
+              <option value="16">4:00 PM</option>
+              <option value="17" selected>5:00 PM</option>
+              <option value="18">6:00 PM</option>
+              <option value="19">7:00 PM</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="worker-intensity">Work Exertion Level</label>
+            <select id="worker-intensity" class="form-control">
+              <option value="moderate">Moderate (Walking, light tools)</option>
+              <option value="heavy" selected>Heavy (Masonry, shoveling, lifting)</option>
+              <option value="extreme">Extreme (Roofing, asphalt laying)</option>
+            </select>
+          </div>
+          <div style="display: flex; align-items: flex-end;">
+            <button class="btn-action-primary" id="btn-update-worker-shift" style="width: 100%; height: 42px;">
+              Update Shift Plan
+            </button>
+          </div>
+        </div>
+
+        <!-- Shift Risk Overview -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="card" style="margin: 0; background: #1a2234;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Overall Shift Risk</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #ef4444; margin-top: 4px;" id="worker-overall-risk-label">
+              🔴 VERY HIGH (88/100)
+            </div>
+          </div>
+          <div class="card" style="margin: 0; background: #1a2234;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Required Shift Hydration Quota</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #38bdf8; margin-top: 4px;" id="worker-hydration-quota-val">
+              🚰 6.5 Liters (Water + ORS)
+            </div>
+          </div>
+          <div class="card" style="margin: 0; background: #1a2234;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Critical Moratorium Window</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #f59e0b; margin-top: 4px;" id="worker-moratorium-window">
+              12:30 PM – 4:00 PM
+            </div>
+          </div>
+        </div>
+
+        <!-- Hourly Work-Rest Schedule Table -->
+        <div class="worker-schedule-grid" id="worker-schedule-rows">
+          <!-- Dynamically populated rows -->
+        </div>
+
+        <!-- Occupational Safety Guidance -->
+        <div style="margin-top: 1.5rem; background: var(--bg-card); padding: 1.25rem; border-radius: 8px;">
+          <h3 style="font-size: 0.95rem; font-weight: 800; color: #fff; margin-bottom: 0.75rem;">👷 Field Supervisor Checklist</h3>
+          <ul style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.6; padding-left: 1.2rem;" id="worker-guidance-list">
+            <!-- Dynamically populated -->
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 6: CITY COMMAND CENTER (CIVIC VIEW) -->
+    <!-- ========================================== -->
+    <section id="tab-community" class="tab-content-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🏛️</span> City Heat Command Center (Civic & Disaster Management)
+          </div>
+          <span class="data-status-badge live">Decision-Support Matrix</span>
+        </div>
+
+        <!-- Civic Overview Metrics -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="metric-pill-item" style="border-left: 4px solid #ef4444;">
+            <div class="metric-pill-title">Municipal Heat Status</div>
+            <div class="metric-pill-val" style="color: #ef4444;" id="civic-status-val">EXTREME</div>
+          </div>
+          <div class="metric-pill-item">
+            <div class="metric-pill-title">High-Risk Micro-Zones</div>
+            <div class="metric-pill-val" id="civic-zones-val">4 Wards</div>
+          </div>
+          <div class="metric-pill-item">
+            <div class="metric-pill-title">Est. Vulnerable Population</div>
+            <div class="metric-pill-val" id="civic-pop-val">11,350</div>
+          </div>
+          <div class="metric-pill-item">
+            <div class="metric-pill-title">Active Cooling Centers</div>
+            <div class="metric-pill-val" id="civic-cooling-val">8 Facilities</div>
+          </div>
+          <div class="metric-pill-item">
+            <div class="metric-pill-title">Municipal Water Points</div>
+            <div class="metric-pill-val" id="civic-water-val">31 Stations</div>
+          </div>
+          <div class="metric-pill-item">
+            <div class="metric-pill-title">Standby Hospitals</div>
+            <div class="metric-pill-val" id="civic-med-val">12 Units</div>
+          </div>
+        </div>
+
+        <!-- Priority AI Emergency Interventions -->
+        <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-bottom: 0.75rem;">
+          🚨 AI Priority Emergency Actions (Municipal Dispatch Matrix)
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;" id="civic-actions-grid">
+          <!-- Dynamically populated action cards -->
+        </div>
+
+        <!-- Micro-Zones Heat Vulnerability Index (HVI) Table -->
+        <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-bottom: 0.75rem;">
+          📍 Ward Heat Vulnerability Ranking (HVI)
+        </h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;" id="civic-zones-table">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                <th style="padding: 0.6rem;">Rank</th>
+                <th style="padding: 0.6rem;">Ward / Zone</th>
+                <th style="padding: 0.6rem;">Surface Temp</th>
+                <th style="padding: 0.6rem;">Vulnerable Pop</th>
+                <th style="padding: 0.6rem;">AC Access</th>
+                <th style="padding: 0.6rem;">Canopy</th>
+                <th style="padding: 0.6rem;">Priority Actions</th>
+              </tr>
+            </thead>
+            <tbody id="civic-zones-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 7: CLIMATE TRENDS & GRID STRESS -->
+    <!-- ========================================== -->
+    <section id="tab-climate" class="tab-content-panel">
+      <div class="dashboard-grid">
+        <!-- 10-Year Heatwave Trends Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>📈</span> 10-Year Extreme Heat Trends (>40°C Days)
+            </div>
+            <span class="data-status-badge demo">ERA5 Climatological Baseline</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            "This isn't just today's weather. This region is experiencing a persistent, escalating multi-year heat emergency."
+          </p>
+          <div style="position: relative; height: 320px;">
+            <canvas id="climateTrendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Climate Insights & Grid Stress -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <span>🔍</span> Long-Term Regional Insights
+              </div>
+            </div>
+            <ul class="factors-list" id="climate-insights-list">
+              <!-- Populated dynamically -->
+            </ul>
+          </div>
+
+          <div class="card" style="border-top: 4px solid #f97316;">
+            <div class="card-header">
+              <div class="card-title">
+                <span>⚡</span> Peak Cooling Degree Demand
+              </div>
+              <span class="data-status-badge demo">Grid Stress Model</span>
+            </div>
+            <div style="font-size: 0.9rem; color: #f1f5f9; line-height: 1.5;" id="climate-grid-text">
+              Elevated cooling degree hours (CDD) create extreme strain on local distribution transformers between 2:00 PM and 6:00 PM.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 8: FARM & LIVESTOCK MODE -->
+    <!-- ========================================== -->
+    <section id="tab-agri" class="tab-content-panel">
+      <div class="dashboard-grid">
+        <!-- Crop Heat Stress -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>🌾</span> Crop Heat Stress & Irrigation Advisor
+            </div>
+            <span class="data-status-badge live">Agronomic Thermal Model</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+            <div>
+              <label class="form-label" for="agri-crop-select">Crop Type</label>
+              <select id="agri-crop-select" class="form-control">
+                <option value="Paddy / Rice" selected>Paddy / Rice</option>
+                <option value="Wheat">Wheat</option>
+                <option value="Cotton">Cotton</option>
+                <option value="Maize / Corn">Maize / Corn</option>
+                <option value="Tomatoes / Vegetables">Tomatoes / Vegetables</option>
+                <option value="Groundnut / Peanuts">Groundnut / Peanuts</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="agri-stage-select">Growth Stage</label>
+              <select id="agri-stage-select" class="form-control">
+                <option value="Flowering / Pollination" selected>Flowering / Pollination (Critical)</option>
+                <option value="Vegetative">Vegetative Growth</option>
+                <option value="Grain Filling">Grain Filling / Maturation</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="btn-action-primary" id="btn-calc-crop" style="width: 100%; margin-bottom: 1rem;">
+            Assess Crop Vulnerability
+          </button>
+
+          <div id="crop-results-box" style="background: var(--bg-card); padding: 1rem; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; color: #fff;">Crop Thermal Strain</span>
+              <span class="data-status-badge demo" id="crop-status-pill" style="border-color: #ef4444; color: #f87171;">CRITICAL</span>
+            </div>
+            <div style="font-size: 0.85rem; color: #38bdf8; margin: 0.5rem 0;" id="crop-irrigation-window">
+              💧 Optimal Irrigation Window: 04:30 AM – 07:30 AM (Avoid midday scalding)
+            </div>
+            <ul style="font-size: 0.8rem; color: #cbd5e1; padding-left: 1.2rem; line-height: 1.5;" id="crop-guidance-list">
+              <li>Paddy flowering temperature exceeds 35°C threshold; high risk of spikelet sterility.</li>
+              <li>Maintain standing water depth (3-5 cm) to buffer canopy temperature.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Livestock THI Safety -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>🐄</span> Livestock THI (Temperature-Humidity Index)
+            </div>
+            <span class="data-status-badge live">Veterinary Heat Index</span>
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label class="form-label" for="livestock-animal-select">Animal Type</label>
+            <select id="livestock-animal-select" class="form-control">
+              <option value="Dairy Cattle" selected>Dairy Cattle (Highly sensitive)</option>
+              <option value="Poultry / Broilers">Poultry / Broilers</option>
+              <option value="Sheep & Goats">Sheep & Goats</option>
+            </select>
+          </div>
+
+          <button class="btn-action-secondary" id="btn-calc-livestock" style="width: 100%; margin-bottom: 1rem;">
+            Calculate Livestock THI
+          </button>
+
+          <div id="livestock-results-box" style="background: var(--bg-card); padding: 1rem; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; color: #fff;">THI Score: <strong id="livestock-thi-val">84.5</strong></span>
+              <span class="data-status-badge demo" id="livestock-status-pill" style="border-color: #ef4444; color: #f87171;">EMERGENCY STRESS</span>
+            </div>
+            <div style="font-size: 0.85rem; color: #fca5a5; margin: 0.5rem 0;">
+              High risk of milk production drop (>25%) and severe animal distress.
+            </div>
+            <ul style="font-size: 0.8rem; color: #cbd5e1; padding-left: 1.2rem; line-height: 1.5;" id="livestock-guidance-list">
+              <li>Activate evaporative misting and tunnel ventilation fans immediately.</li>
+              <li>Provide chilled drinking water troughs within 5 meters of shaded cattle sheds.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL: PERSONAL VULNERABILITY PROFILE -->
+  <!-- ========================================== -->
+  <div class="modal-overlay" id="profile-modal">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff;">👤 Personal Heat-Safety Profile</h3>
+        <button id="close-profile-modal-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Your profile adjusts the baseline environmental weather risk to calculate <strong>how dangerous the heat is for you</strong>. Stored locally in your browser.
+      </p>
+
+      <form id="profile-form">
+        <div class="form-group">
+          <label class="form-label" for="prof-occupation">Occupation / Daily Routine</label>
+          <select id="prof-occupation" class="form-control">
+            <option value="general_public">General Public (Mixed Routine)</option>
+            <option value="office_worker">Office Worker (Mostly Indoors)</option>
+            <option value="construction_worker">Construction / Outdoor Laborer</option>
+            <option value="delivery_worker">Delivery Courier / Street Vendor</option>
+            <option value="farmer">Farmer / Agricultural Worker</option>
+            <option value="athlete">Athlete / Runner / Sports</option>
+            <option value="student">Student / School Child</option>
+            <option value="elderly_retired">Elderly / Retired</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prof-age-group">Age Category</label>
+          <select id="prof-age-group" class="form-control">
+            <option value="child_under_5">Child (Under 5 years - High Risk)</option>
+            <option value="child_5_17">School Age (5 – 17 years)</option>
+            <option value="adult_18_49" selected>Adult (18 – 49 years)</option>
+            <option value="adult_50_64">Older Adult (50 – 64 years)</option>
+            <option value="elderly_65_plus">Elderly (65+ years - High Risk)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prof-exposure">Outdoor Exposure (Hours/Day)</label>
+          <input type="number" id="prof-exposure" class="form-control" value="3" min="0" max="14">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prof-activity">Exertion / Physical Activity</label>
+          <select id="prof-activity" class="form-control">
+            <option value="sedentary">Sedentary (Desk work, resting)</option>
+            <option value="light">Light (Casual walking)</option>
+            <option value="moderate" selected>Moderate (Brisk walking, standing)</option>
+            <option value="strenuous">Strenuous (Heavy lifting, running, manual labor)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prof-cooling">Cooling / Air Conditioning Access</label>
+          <select id="prof-cooling" class="form-control">
+            <option value="full_ac">Full Air Conditioning (Home & Work)</option>
+            <option value="partial_fan" selected>Ceiling Fans / Partial Cooling Only</option>
+            <option value="no_cooling">No Cooling / Uninsulated Metal Roof</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" id="prof-chronic" style="width: 18px; height: 18px;">
+          <label for="prof-chronic" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
+            Pre-existing condition (Cardiovascular, kidney, or respiratory sensitivity)
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
+          <button type="submit" class="btn-action-primary" style="flex: 1;">
+            Save & Recalculate Risk
+          </button>
+          <button type="button" id="btn-reset-profile" class="btn-action-secondary">
+            Reset
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ALERT SIMULATION & NOTIFICATIONS -->
+  <!-- ========================================== -->
+  <div class="modal-overlay" id="alert-modal">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff;">🔔 Heat Alerts & Notification Settings</h3>
+        <button id="close-alert-modal-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <div class="card" style="border: 1px solid #ef4444; background: rgba(239, 68, 68, 0.1);">
+        <div style="font-weight: 700; color: #f87171; margin-bottom: 0.35rem;">🔥 Current Active Alert Sample</div>
+        <div style="font-size: 0.85rem; color: #fee2e2; line-height: 1.45;">
+          <strong>EXTREME HEAT ADVISORY:</strong> Your location is expected to experience dangerous thermal stress (Score 91/100) between 12:30 PM and 4:30 PM. Nearest cooling point: 700m away.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="alert-threshold-select">Alert Trigger Threshold</label>
+        <select id="alert-threshold-select" class="form-control">
+          <option value="60">High Risk (Score > 60)</option>
+          <option value="80" selected>Very High / Extreme (Score > 80)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+        <input type="checkbox" id="browser-notif-checkbox" style="width: 18px; height: 18px;">
+        <label for="browser-notif-checkbox" style="font-size: 0.85rem; color: #cbd5e1; cursor: pointer;">
+          Enable Browser Push Notifications
+        </label>
+      </div>
+
+      <button class="btn-action-primary" id="btn-trigger-demo-alert" style="width: 100%; margin-top: 0.5rem;">
+        🔔 Trigger Sample Demo Alert Now
+      </button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer-container">
+    <div>
+      <strong>HeatShield AI</strong> — Hyperlocal Extreme Heat Risk & Action Intelligence Platform.
+    </div>
+    <div style="margin-top: 0.35rem;">
+      Built with deterministic scientific heat indices (Rothfusz, sWBGT), Open-Meteo forecasts, OpenStreetMap POIs, and privacy-first vulnerability modeling.
+    </div>
+    <div style="margin-top: 0.35rem; font-size: 0.75rem;">
+      Data Sources: Open-Meteo Weather API • OpenStreetMap Overpass POIs • ERA5 Climate Baselines • NIOSH/OSHA Heat Thresholds.
+    </div>
+  </footer>
+
+  <!-- Leaflet JS (with automatic fallback if offline) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Application Script -->
+  <script src="app.js"></script>
+</body>
+</html>
