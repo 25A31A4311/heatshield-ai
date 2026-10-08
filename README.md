@@ -5,8 +5,11 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 23 Passing](https://img.shields.io/badge/Tests-23%20Passed-success.svg)](tests/)
-[![Architecture: DATA→RISK→PERSON→ACTION](https://img.shields.io/badge/Architecture-DATA%E2%86%92RISK%E2%86%92PERSON%E2%86%92ACTION-orange.svg)](docs/ARCHITECTURE.md)
+[![Tests: 25 Passing](https://img.shields.io/badge/Tests-25%20Passed-success.svg)](tests/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Active%20Online-brightgreen.svg)](https://fantastic-holdings-olive-theory.trycloudflare.com)
+
+> 🌐 **Live Public Application**: **[https://fantastic-holdings-olive-theory.trycloudflare.com](https://fantastic-holdings-olive-theory.trycloudflare.com)**
+
 
 ---
 
