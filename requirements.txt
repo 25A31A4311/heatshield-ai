@@ -1,0 +1,3 @@
+# HeatShield AI - Dependencies
+# The backend and all intelligence engines run natively on Python 3 standard library
+# Zero external dependencies required.
